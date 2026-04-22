@@ -454,3 +454,69 @@ fn main() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_collect_snapshot() {
+        let result = collect_snapshot();
+        assert!(result.is_ok(), "collect_snapshot doit réussir et renvoyer une snapshot");
+        
+        let snapshot = result.unwrap();
+        assert!(snapshot.cpu.core_count > 0, "il devrait y avoir au moins 1 coeur de CPU");
+        assert!(snapshot.memory.total_mb > 0, "la RAM totale devrait être supérieure à 0");
+        assert!(snapshot.top_processes.len() <= 5, "max 5 processus");
+    }
+
+    #[test]
+    fn test_format_response_cpu() {
+        let snapshot = SystemSnapshot {
+            timestamp: "2026-04-22 10:00:00".to_string(),
+            cpu: CpuInfo { usage_percent: 50.0, core_count: 8 },
+            memory: MemInfo { total_mb: 16000, used_mb: 8000, free_mb: 8000 },
+            top_processes: vec![],
+        };
+        let res = format_response(&snapshot, "cpu");
+        assert!(res.contains("[CPU]"), "La réponse doit contenir [CPU]");
+        assert!(res.contains("50.0%"), "La réponse doit contenir l'usage CPU");
+    }
+
+    #[test]
+    fn test_format_response_mem() {
+        let snapshot = SystemSnapshot {
+            timestamp: "2026-04-22 10:00:00".to_string(),
+            cpu: CpuInfo { usage_percent: 50.0, core_count: 8 },
+            memory: MemInfo { total_mb: 16000, used_mb: 8000, free_mb: 8000 },
+            top_processes: vec![],
+        };
+        let res = format_response(&snapshot, "mem");
+        assert!(res.contains("[MÉMOIRE]"), "La réponse doit contenir [MÉMOIRE]");
+        assert!(res.contains("8000MB"), "La réponse doit contenir la RAM");
+    }
+
+    #[test]
+    fn test_format_response_help() {
+        let snapshot = SystemSnapshot {
+            timestamp: "2026-04-22 10:00:00".to_string(),
+            cpu: CpuInfo { usage_percent: 50.0, core_count: 8 },
+            memory: MemInfo { total_mb: 16000, used_mb: 8000, free_mb: 8000 },
+            top_processes: vec![],
+        };
+        let res = format_response(&snapshot, "help");
+        assert!(res.contains("Commandes disponibles"), "La réponse doit être l'aide");
+    }
+
+    #[test]
+    fn test_format_response_unknown() {
+        let snapshot = SystemSnapshot {
+            timestamp: "2026-04-22 10:00:00".to_string(),
+            cpu: CpuInfo { usage_percent: 50.0, core_count: 8 },
+            memory: MemInfo { total_mb: 16000, used_mb: 8000, free_mb: 8000 },
+            top_processes: vec![],
+        };
+        let res = format_response(&snapshot, "xyz");
+        assert!(res.contains("Commande inconnue"), "Doit renvoyer une erreur pour commande inconnue");
+    }
+}
